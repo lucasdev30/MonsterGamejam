@@ -5,10 +5,14 @@ using UnityEngine;
 public class LevelGen : MonoBehaviour
 {
     [Header("Toutes les rooms")]
-    public List<GameObject> allPrefabs;
+    public List<GameObject> allPrefabsEasy;
+    public List<GameObject> allPrefabsMid;
+    public List<GameObject> allPrefabsHard;
 
     [Header("Sélection Random")]
-    public int numberToSelect = 3;   
+    public int numberToSelect = 3;
+
+    public GameObject dayscore;
     private List<GameObject> selectedPrefabs;
 
 public GameObject player; 
@@ -18,7 +22,18 @@ public GameObject player;
     void Start()
 
     {
-        selectedPrefabs = GetRandomPrefabs(allPrefabs, numberToSelect);
+        GameScore gameScore = dayscore.GetComponent<GameScore>();
+        if(gameScore.day == 1)
+        {
+            
+        selectedPrefabs = GetRandomPrefabs(allPrefabsEasy, numberToSelect);
+        selectedPrefabs[0] = allPrefabsEasy[0];
+        } else if (gameScore.day == 2)
+        {
+            
+        selectedPrefabs = GetRandomPrefabs(allPrefabsMid, numberToSelect);
+        } else { 
+        selectedPrefabs = GetRandomPrefabs(allPrefabsHard, numberToSelect);}
 
         NextRoom();
     }
@@ -51,7 +66,7 @@ public GameObject player;
 
         for (int i = 0; i < count; i++)
         {
-            int index = Random.Range(0, copy.Count);
+            int index = Random.Range(1, copy.Count);
             result.Add(copy[index]);
             copy.RemoveAt(index);
         }

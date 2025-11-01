@@ -51,7 +51,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  moveSpeed: 1.8
+  moveSpeed: 7.2
   turnSpeed: 270
   sweepTurnSpeed: 80
   waitAtPeak: 1
@@ -99,7 +99,7 @@ Transform:
   m_GameObject: {fileID: 1216030180519779921}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.75339746}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1216030181548446363}
@@ -303,8 +303,8 @@ MonoBehaviour:
   m_NormalMapDistance: 3
   m_NormalMapQuality: 2
   m_UseNormalMap: 0
-  m_ShadowIntensityEnabled: 0
-  m_ShadowIntensity: 0.75
+  m_ShadowIntensityEnabled: 1
+  m_ShadowIntensity: 1
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
   m_Vertices:
@@ -342,7 +342,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 55
   m_PointLightOuterAngle: 60.86958
   m_PointLightInnerRadius: 0
-  m_PointLightOuterRadius: 33.66
+  m_PointLightOuterRadius: 134.64
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1
