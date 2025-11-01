@@ -1,38 +1,35 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(BoxCollider2D))]
-[RequireComponent(typeof(SpriteRenderer))]
 public class DisappearOnInteract2D : MonoBehaviour
 {
     [Header("Paramètres du carré")]
     public float delayBeforeDisappear = 2f;
     public Color highlightColor = Color.yellow;
     public Vector2 hitboxSize = new Vector2(1.5f, 1.5f);
-    public int scoreValue = 1;
 
     [Header("Barre de progression")]
     public Transform progressBar;
     public GameObject barBackground;
 
     [Header("Apparence")]
-    public Sprite[] possibleSprites = new Sprite[6]; // Tableau de 6 sprites à assigner dans l’inspector
-
+    public Sprite[] staticSprites; // cadavre_1 à cadavre_5
+    public Animator animator;       // Animator pour la 6e option
 
     private SpriteRenderer sr;
     private Color originalColor;
     private Vector3 initialScale;
-
     private bool playerIsNear = false;
-    private bool isCollecting = false;
-    private Coroutine collectionCoroutine;
+    private bool isDisappearing = false;
     private PlayerMovement playerMovement;
 
     void Start()
     {
         sr = GetComponent<SpriteRenderer>();
-        if (sr != null) originalColor = sr.color;
+        if (sr != null)
+            originalColor = sr.color;
 
+        // Collider
         BoxCollider2D collider = GetComponent<BoxCollider2D>();
         if (collider != null)
         {
@@ -40,60 +37,57 @@ public class DisappearOnInteract2D : MonoBehaviour
             collider.isTrigger = true;
         }
 
+        // Barre
         if (progressBar != null)
         {
             initialScale = progressBar.localScale;
             progressBar.gameObject.SetActive(false);
         }
-
         if (barBackground != null)
             barBackground.SetActive(false);
 
-        sr = GetComponent<SpriteRenderer>();
-        if (sr != null)
+        // Référence PlayerMovement
+        playerMovement = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerMovement>();
+
+        // Apparence aléatoire
+        int index = Random.Range(0, 6);
+        if (index < 5)
         {
-            originalColor = sr.color;
-
-            // Choix aléatoire d’un sprite dans le tableau
-            if (possibleSprites != null && possibleSprites.Length > 0)
-            {
-                int index = Random.Range(0, possibleSprites.Length); 
-                sr.sprite = possibleSprites[index];
-            }
-        }
-    }
-
-
-    void Update()
-    {
-        if (!playerIsNear || playerMovement == null)
-        {
-            CancelCollection();
-            return;
-        }
-
-        // Commence la collecte uniquement si Espace est maintenu
-        if (Input.GetKey(KeyCode.Space))
-        {
-            // Annule si le joueur bouge
-            if (playerMovement.IsMoving())
-            {
-                CancelCollection();
-            }
-            else if (!isCollecting)
-            {
-                collectionCoroutine = StartCoroutine(FillBar());
-            }
+            sr.sprite = staticSprites[index];
+            if (animator != null)
+                animator.enabled = false; // désactive l'anim si c'était actif
         }
         else
         {
-            CancelCollection();
+            if (animator != null)
+                animator.enabled = true;  // lance l'animation 6e option
         }
     }
 
-    private IEnumerator FillBar()
+    void Update()
     {
-        isCollecting = true;
+        if (playerIsNear && Input.GetKey(KeyCode.Space) && !isDisappearing)
+        {
+            if (!playerMovement.IsMoving())
+            {
+                StartCoroutine(DisappearAfterDelay());
+            }
+            else
+            {
+                ResetProgressBar();
+            }
+        }
+
+        if (isDisappearing && !Input.GetKey(KeyCode.Space))
+        {
+            ResetProgressBar();
+        }
+    }
+
+    private IEnumerator DisappearAfterDelay()
+    {
+        isDisappearing = true;
+        float elapsed = 0f;
 
         if (barBackground != null)
             barBackground.SetActive(true);
@@ -104,53 +98,38 @@ public class DisappearOnInteract2D : MonoBehaviour
             progressBar.localScale = new Vector3(0f, initialScale.y, initialScale.z);
         }
 
-
-        float elapsed = 0f;
         while (elapsed < delayBeforeDisappear)
         {
+            if (playerMovement.IsMoving() || !Input.GetKey(KeyCode.Space))
+            {
+                ResetProgressBar();
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
             float progress = Mathf.Clamp01(elapsed / delayBeforeDisappear);
 
             if (progressBar != null)
                 progressBar.localScale = new Vector3(progress * initialScale.x, initialScale.y, initialScale.z);
 
-            // Annule si le joueur bouge ou relâche Espace
-            if (!Input.GetKey(KeyCode.Space) || playerMovement.IsMoving())
-            {
-                CancelCollection();
-                yield break;
-            }
-
             yield return null;
         }
 
-        // Ajouter le score
-        if (GameManager.Instance != null)
-            GameManager.Instance.AddScore(scoreValue);
-
+        GameManager.Instance.AddScore(10);
         Destroy(gameObject);
-        isCollecting = false;
     }
 
-    private void CancelCollection()
+    private void ResetProgressBar()
     {
-        if (!isCollecting) return;
-
-        // Réinitialise la barre
+        isDisappearing = false;
         if (progressBar != null)
             progressBar.localScale = new Vector3(0f, initialScale.y, initialScale.z);
 
-        // On garde le fond visible si tu veux
+        if (progressBar != null)
+            progressBar.gameObject.SetActive(false);
+
         if (barBackground != null)
-            barBackground.SetActive(true);
-
-        if (collectionCoroutine != null)
-        {
-            StopCoroutine(collectionCoroutine);
-            collectionCoroutine = null;
-        }
-
-        isCollecting = false;
+            barBackground.SetActive(false);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -158,8 +137,8 @@ public class DisappearOnInteract2D : MonoBehaviour
         if (collision.CompareTag("Player"))
         {
             playerIsNear = true;
-            if (sr != null) sr.color = highlightColor;
-            playerMovement = collision.GetComponent<PlayerMovement>();
+            if (sr != null)
+                sr.color = highlightColor;
         }
     }
 
@@ -168,8 +147,10 @@ public class DisappearOnInteract2D : MonoBehaviour
         if (collision.CompareTag("Player"))
         {
             playerIsNear = false;
-            if (sr != null) sr.color = originalColor;
-            CancelCollection();
+            if (sr != null)
+                sr.color = originalColor;
+
+            ResetProgressBar();
         }
     }
 }
